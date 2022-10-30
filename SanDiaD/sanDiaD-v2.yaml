@@ -11,13 +11,13 @@ timestepper:
   arguments:
     ts_type: rk
     ts_max_time: 1
-    ts_max_steps: 100000
+    ts_max_steps: 10000
     ts_dt: 1.0e-5
     ts_adapt_monitor: ""
     ts_adapt_safety: 0.75
   # io controls how often the results are saved to a file for visualization and restart
   io: # by default the ablate::io::Hdf5Serializer serializer is used
-    interval: 10000
+    interval: 1000
   # the BoxMeshBoundaryCells domain adds an extra layer of boundary cells to the outside of the domain and
   # tags these cells with special labels
   domain: !ablate::domain::BoxMeshBoundaryCells
@@ -285,7 +285,7 @@ solvers:
       name: CH4Inlet
     fieldBoundary:
       name: boundaryFaces
-    mergeFaces: false
+    mergeFaces: true
     processes:
       - !ablate::boundarySolver::lodi::Inlet
         eos: *eos
@@ -298,7 +298,7 @@ solvers:
       name: pilotInlet
     fieldBoundary:
       name: boundaryFaces
-    mergeFaces: false
+    mergeFaces: true
     processes:
       - !ablate::boundarySolver::lodi::Inlet
         eos: *eos
@@ -311,7 +311,7 @@ solvers:
       name: AirInlet
     fieldBoundary:
       name: boundaryFaces
-    mergeFaces: false
+    mergeFaces: true
     processes:
       - !ablate::boundarySolver::lodi::Inlet
         eos: *eos
