@@ -1,0 +1,78 @@
+---
+environment:
+  title: _parallel-64-new
+  tagDirectory: false
+arguments: {}
+timestepper:
+  name: theMainTimeStepper
+  io:
+    interval: 6000
+  arguments:
+    ts_type: rk
+    ts_adapt_type: none
+    ts_max_steps: 600000
+  domain: !<!ablate::domain::BoxMesh>
+    name: simpleBoxField
+    faces: [48, 48, 48]
+    lower: [0, 0, 0]
+    upper: [0.565, 0.565, 0.565]
+    boundary: [PERIODIC, PERIODIC, PERIODIC, PERIODIC]
+    simplex: false
+    options:
+      dm_refine: 1
+    modifiers:
+      - !<!ablate::domain::modifiers::DistributeWithGhostCells> ""
+      - !<!ablate::domain::modifiers::GhostBoundaryCells> ""
+    fields:
+      - !<!ablate::finiteVolume::CompressibleFlowFields>
+        eos: !<!ablate::eos::PerfectGas> &1
+          parameters:
+            gamma: 1.4
+            Rgas: 287.0
+        extraVariables: [ev1]
+  initialization:
+    - !<!ablate::finiteVolume::fieldFunctions::Euler>
+      state: &2
+        eos: *1
+        temperature: 332
+        pressure: 95325.0
+        velocity: !<!ablate::mathFunctions::ParsedSeries>
+          upperBound: 5000
+          lowerBound: 1
+          formula: 2 * sqrt(1.453 * exp(-2 * (((100/9) + (3.14/(2*3.14*9/100/96) - (100/9)) * (i - 1)  / 5000) / 4819) ^ 2) * (.25^2 / 25.82) * (((100/9)+ (3.14/(2*3.14*9/100/96)- (100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((100/9) + (3.14/(2*3.14*9/100/96)- (100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((100/9) + (3.14/(2*3.14*9/100/96) - (100/9)) * (i - 1)  / 5000) * (2/(2*3.14*9/100/96))*sin(.5* ((100/9) + (3.14/(2*3.14*9/100/96) - (100/9)) * (i - 1)  / 5000)* (2*3.14*9/100/96)*sin( acos(rand(-1,1))) * cos(rand(0,2*3.14)) )* x + (rand(-3.14/2,3.14/2))),  2 * sqrt(1.453 * exp(-2 * (((100/9) + (3.14/(2*3.14*9/100/96) - (100/9)) * (i - 1)  / 5000) / 4819) ^ 2) * (.25^2 / 25.82) * (((100/9)+ (3.14/(2*3.14*9/100/96)- (100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((100/9) + (3.14/(2*3.14*9/100/96)- (100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((100/9) + (3.14/(2*3.14*9/100/96) - (100/9)) * (i - 1)  / 5000) * (2/(2*3.14*9/100/96))*sin(.5* ((100/9) + (3.14/(2*3.14*9/100/96) - (100/9)) * (i - 1)  / 5000)* (2*3.14*9/100/96)*sin( acos(rand(-1,1))) * sin(rand(0,2*3.14)) )* y + (rand(-3.14/2,3.14/2))), 2 * sqrt(1.453 * exp(-2 * (((100/9) + (3.14/(2*3.14*9/100/96) - (100/9)) * (i - 1)  / 5000) / 4819) ^ 2) * (.25^2 / 25.82) * (((100/9)+ (3.14/(2*3.14*9/100/96)- (100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((100/9) + (3.14/(2*3.14*9/100/96)- (100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((100/9) + (3.14/(2*3.14*9/100/96) - (100/9)) * (i - 1)  / 5000) * (2/(2*3.14*9/100/96))*sin(.5* ((100/9) + (3.14/(2*3.14*9/100/96) - (100/9)) * (i - 1)  / 5000)* (2*3.14*9/100/96)*cos( acos(rand(-1,1))) )* z + (rand(-3.14/2,3.14/2)))
+          constants:
+            n: 5000
+            alpha: 1.453
+            delta: (2*3.14*9/100/8)
+            kappa_eta: 0.8573*5624
+            uPrime: 0.25
+            kappa_e: 25.82
+            kappa_o: (100/9)
+            kappa_max: 3.14/delta
+            HI: 1
+            LO: -1
+            HI1: 2*pi
+            LO1: 0
+            HI2: pi/2
+            LO2: -pi/2
+    - !<!ablate::finiteVolume::fieldFunctions::DensityExtraVariables>
+      state: *2
+      functions:
+        - .093
+solver: !<!ablate::finiteVolume::CompressibleFlowSolver>
+  id: evExample
+  parameters:
+    cfl: .075
+  fluxCalculator: !<!ablate::finiteVolume::fluxCalculator::AusmpUp>
+    mInf: .5
+  computePhysicsTimeStep: true
+  transport:
+    diff: 1E-5
+    k: 0.025
+    mu: 1E-5
+  eos: *1
+  additionalProcesses:
+    - !<!ablate::finiteVolume::processes::LES>
+      tke: ev1
+  monitors:
+    - !<!ablate::monitors::TimeStepMonitor> ""
