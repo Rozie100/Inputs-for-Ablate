@@ -114,31 +114,19 @@ timestepper:
               field: " 0<x^2+y^2<0.0036 ^2 && -.05 <z < 0  ? 0.1966 : 0.23"
             - fieldName: CH4
               field: " 0<x^2+y^2<0.0036 ^2 && -.05 <z < 0   ? 0.1561 : 0"
-    - !ablate::finiteVolume::fieldFunctions::Euler
-      region:
-        name: boundaryCells
-      state: *initFlowState
+
     - !ablate::finiteVolume::fieldFunctions::DensityMassFractions
       # region:
        # name: flowRegion
       state: *initFlowState
-    - !ablate::finiteVolume::fieldFunctions::DensityMassFractions
-      region:
-        name: boundaryCells
-      state: *initFlowState
+
     - !ablate::finiteVolume::fieldFunctions::DensityExtraVariables
       # region:
         # name: flowRegion
       state: *initFlowState
       functions:
         - 20 # ev1 is set to initial value for tke
-    - !ablate::finiteVolume::fieldFunctions::DensityExtraVariables
-      region:
-        name: boundaryCells
-      state: *initFlowState
 
-      functions:
-        - 20
 
     - !ablate::finiteVolume::fieldFunctions::Euler
       region:
@@ -282,7 +270,7 @@ solvers:
     monitors:
       # output the time and dt at each time step
       - !ablate::monitors::TimeStepMonitor
-        interval: 2
+        interval: 25
       - !ablate::monitors::PhysicsTimeStep
         interval: 25
       - !ablate::monitors::MixtureFractionMonitor
