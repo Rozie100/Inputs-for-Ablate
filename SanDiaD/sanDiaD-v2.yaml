@@ -11,19 +11,19 @@ timestepper:
   arguments:
     ts_type: rk
     ts_max_time: 1
-    ts_max_steps: 10
+    ts_max_steps: 100000
     ts_dt: 1.0e-5
     ts_adapt_monitor: ""
     ts_adapt_safety: 0.75
   # io controls how often the results are saved to a file for visualization and restart
   io: # by default the ablate::io::Hdf5Serializer serializer is used
-    interval: 1
+    interval: 10000
   # the BoxMeshBoundaryCells domain adds an extra layer of boundary cells to the outside of the domain and
   # tags these cells with special labels
   domain: !ablate::domain::BoxMeshBoundaryCells
 
     name: simpleBoxField
-    faces: [4, 4, 3]
+    faces: [400, 400, 350]
     lower: [-0.05, -.05, -.05]
     upper: [0.05, .05, .45]
     simplex: false
