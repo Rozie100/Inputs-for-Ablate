@@ -1,9 +1,6 @@
-# This test show the use of a PGS with the compressible flow field and lodi boundaries.
-
 ---
-# metadata for the simulation
 environment:
-  title: _sandiaD6
+  title: _sandiaD-fine
   tagDirectory: false
 arguments:
   outputAuxVector: true
@@ -11,180 +8,134 @@ timestepper:
   arguments:
     ts_type: rk
     ts_max_time: 1
-    ts_max_steps: 10000
+    ts_max_steps: 40000
     ts_dt: 1.0e-4
     ts_adapt_monitor: ""
     ts_adapt_safety: 0.75
-  # io controls how often the results are saved to a file for visualization and restart
-  io: # by default the ablate::io::Hdf5Serializer serializer is used
+  io:
     interval: 5000
-  # the BoxMeshBoundaryCells domain adds an extra layer of boundary cells to the outside of the domain and
-  # tags these cells with special labels
-  domain: !ablate::domain::BoxMeshBoundaryCells
-
+  domain: !<!ablate::domain::BoxMeshBoundaryCells>
     name: simpleBoxField
-    faces: [350, 350, 300]
-    lower: [-0.05, -.05, -.05]
-    upper: [0.05, .05, .4]
+    faces: [250, 250, 250]
+    lower: [-0.05, -.05, -.04]
+    upper: [0.05, .05, .35]
     simplex: false
-
     preModifiers:
-      # if using mpi, this modifier distributes cells
-      - !ablate::domain::modifiers::DistributeWithGhostCells
+      - !<!ablate::domain::modifiers::DistributeWithGhostCells>
         ghostCellDepth: 3
-
     postModifiers:
-      # label all boundary faces as "marker" to allow extruding
-      - !ablate::domain::modifiers::TagMeshBoundaryFaces
+      - !<!ablate::domain::modifiers::TagMeshBoundaryFaces>
         region:
           name: marker
-
-        # label the vertices of regions with all faces labeled
-      - !ablate::domain::modifiers::CreateLabel
+      - !<!ablate::domain::modifiers::CreateLabel>
         region:
           name: CH4Inlett
-        function: !ablate::mathFunctions::geom::Cylinder
-          start: [ 0.0, 0.0, -0.1 ]
-          end: [ 0.0, 0.0, -0.05]
+        function: !<!ablate::mathFunctions::geom::Cylinder>
+          start: [0.0, 0.0, -0.07]
+          end: [0.0, 0.0, -0.04]
           radius: 0.0036
 
-      - !ablate::domain::modifiers::CreateLabel
+      - !<!ablate::domain::modifiers::CreateLabel>
         region:
-          name: empty
-        function: !ablate::mathFunctions::geom::CylinderShell
-          start: [ 0, 0.00, -0.1 ]
-          end: [ 0.00, 0.00, -0.0 ]
-          
-          radiusMin: 0.036
+          name: empty1
+        function: !<!ablate::mathFunctions::geom::CylinderShell>
+          start: [0, 0.00, -0.07]
+          end: [0.00, 0.00, -0.04]
+          radiusMin: 0.0036
           radiusMax: 0.004
-        
-      - !ablate::domain::modifiers::CreateLabel
+      - !<!ablate::domain::modifiers::CreateLabel>
         region:
           name: pilotInlett
-        function: !ablate::mathFunctions::geom::CylinderShell
-          start: [ 0, 0.00, -0.1 ]
-          end: [ 0.00, 0.00, -.05 ]
-          
+        function: !<!ablate::mathFunctions::geom::CylinderShell>
+          start: [0, 0.00, -0.07]
+          end: [0.00, 0.00, -.04]
           radiusMin: 0.004
           radiusMax: 0.0091
-      - !ablate::domain::modifiers::CreateLabel
+      - !<!ablate::domain::modifiers::CreateLabel>
         region:
           name: AirInlett
-        function: !ablate::mathFunctions::geom::CylinderShell
-          start: [ 0, 0.00, -0.1 ]
-          end: [ 0.00, 0.00, -0.05 ]
-          
+        function: !<!ablate::mathFunctions::geom::CylinderShell>
+          start: [0, 0.00, -0.07]
+          end: [0.00, 0.00, -0.04]
           radiusMin: 0.0091
           radiusMax: 0.06
-
-
-      - !ablate::domain::modifiers::SubtractLabel
-        # cut the slabBurner and glow plug out of the flowRegion
+      - !<!ablate::domain::modifiers::SubtractLabel>
         differenceRegion:
-          name:  CH4Inlet
+          name: CH4Inlet
         minuendRegion:
           name: boundaryCellsBack
         subtrahendRegions:
-          - name: empty
+          - name: empty1
           - name: pilotInlett
           - name: AirInlett
-
-
-      - !ablate::domain::modifiers::SubtractLabel
-        # cut the slabBurner and glow plug out of the flowRegion
+      - !<!ablate::domain::modifiers::SubtractLabel>
         differenceRegion:
-          name:  pilotInlet
+          name: pilotInlet
         minuendRegion:
           name: boundaryCellsBack
         subtrahendRegions:
-          - name: empty
+          - name: empty1
           - name: CH4Inlett
           - name: AirInlett
-      - !ablate::domain::modifiers::SubtractLabel
-        # cut the slabBurner and glow plug out of the flowRegion
+      - !<!ablate::domain::modifiers::SubtractLabel>
         differenceRegion:
-          name:  AirInlet
+          name: AirInlet
         minuendRegion:
           name: boundaryCellsBack
         subtrahendRegions:
-          - name: empty
+          - name: empty1
           - name: pilotInlett
           - name: CH4Inlett
- 
-      - !ablate::domain::modifiers::SubtractLabel
-        # cut the slabBurner and glow plug out of the flowRegion
-        differenceRegion:
-          name: flowRegion
-        minuendRegion:
-          name: interiorCells
-        subtrahendRegions:
-          - name: empty       
-      - !ablate::domain::modifiers::MergeLabels
+
+      - !<!ablate::domain::modifiers::MergeLabels>
         mergedRegion:
           name: wallBoundaryCells
         regions:
-          - name: boundaryCellsTopfl
+          - name: boundaryCellsTop
           - name: boundaryCellsBottom
           - name: boundaryCellsLeft
           - name: boundaryCellsRight
-      # create a label for the slab burner
-
     options:
-      # pass in these options to petsc when setting up the domain.  Using an option list here prevents command line arguments from being seen.
-      dm_refine: 0 # must be zero when using the BoxMeshBoundaryCells
+      dm_refine: 0
     fields:
-      - !ablate::finiteVolume::CompressibleFlowFields
-        eos: &eos !ablate::eos::TChem
+      - !<!ablate::finiteVolume::CompressibleFlowFields>
+        eos: !<!ablate::eos::TChem> &1
           mechFile: /panasas/scratch/grp-chenjm/rozie/mechanisms/grimech30.mech.dat
           thermoFile: /panasas/scratch/grp-chenjm/rozie/mechanisms/grimech30.thermo.dat
-
-        extraVariables: ["ev1"]
-  # set the initial conditions of the flow field
+        extraVariables: [ev1]
   initialization:
-    - !ablate::finiteVolume::fieldFunctions::Euler
-      # region:
-        # name: flowRegion
-      state: &initFlowState
-        eos: *eos
+    - !<!ablate::finiteVolume::fieldFunctions::Euler>
+      state: &2
+        eos: *1
         pressure: 101325.0
         temperature: 300
-        velocity: 0.9
-        massFractions: !ablate::finiteVolume::fieldFunctions::MassFractions
-          &massFractions
-          eos: *eos
+        velocity: 0,0, 1.5
+        massFractions: !<!ablate::finiteVolume::fieldFunctions::MassFractions>
+          eos: *1
           values:
             - fieldName: N2
-              field: " 0<x^2+y^2<0.0036 ^2 && -.05 <z < 0 ? 0.6473 : 0.77"
+              field: " 0<x^2+y^2<0.0036 ^2 && -.04 <z < 0 ? 0.6473 : 0.77"
             - fieldName: O2
-              field: " 0<x^2+y^2<0.0036 ^2 && -.05 <z < 0  ? 0.1966 : 0.23"
+              field: " 0<x^2+y^2<0.0036 ^2 && -.04 <z < 0  ? 0.1966 : 0.23"
             - fieldName: CH4
-              field: " 0<x^2+y^2<0.0036 ^2 && -.05 <z < 0   ? 0.1561 : 0"
-
-    - !ablate::finiteVolume::fieldFunctions::DensityMassFractions
-      # region:
-       # name: flowRegion
-      state: *initFlowState
-
-    - !ablate::finiteVolume::fieldFunctions::DensityExtraVariables
-      # region:
-        # name: flowRegion
-      state: *initFlowState
+              field: " 0<x^2+y^2<0.0036 ^2 && -.04 <z < 0   ? 0.1561 : 0"
+    - !<!ablate::finiteVolume::fieldFunctions::DensityMassFractions>
+      state: *2
+    - !<!ablate::finiteVolume::fieldFunctions::DensityExtraVariables>
+      state: *2
       functions:
-        - 20 # ev1 is set to initial value for tke
-
-
-    - !ablate::finiteVolume::fieldFunctions::Euler
+        - 20
+    - !<!ablate::finiteVolume::fieldFunctions::Euler>
       region:
         name: CH4Inlet
-      state: &CH4InletFlowState
-        eos: *eos
+      state: &3
+        eos: *1
         pressure: 101325.0
         temperature: 300
-        velocity: !ablate::mathFunctions::ParsedSeries
+        velocity: !<!ablate::mathFunctions::ParsedSeries>
           upperBound: 5000
           lowerBound: 1
-          formula: 2 * sqrt(1.453 * exp(-2 * (((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) / 4819) ^ 2) * (.01^2 / 25.82) * (((100/9)+ (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((100/9) + (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) * (2/(.1/450))*sin(.5* ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000)* (.1/450)*sin( acos(rand(-1,1))) * cos(rand(0,2*3.14)) )* x + (rand(-3.14/2,3.14/2))),  2 * sqrt(1.453 * exp(-2 * (((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) / 4819) ^ 2) * (.01^2 / 25.82) * (((100/9)+ (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((100/9) + (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) * (2/(.1/450))*sin(.5* ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000)* (.1/450)*sin( acos(rand(-1,1))) * sin(rand(0,2*3.14)) )* y + (rand(-3.14/2,3.14/2))), 49.6/5000+(2 * sqrt(1.453 * exp(-2 * (((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) / 4819) ^ 2) * (1^2 / 25.82) * (((100/9)+ (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((100/9) + (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) * (2/(.1/450))*sin(.5* ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000)* (.1/450)*cos( acos(rand(-1,1))) )* z + (rand(-3.14/2,3.14/2))))
-
+          formula: 2 * sqrt(1.453 * exp(-2 * (((2*3.14*100/10) + (3.14/(.1/250) - (2*3.14*100/10)) * (i - 1)  / 5000) / 4000) ^ 2) * (.01^2 / 25.82) * (((2*3.14*100/10)+ (3.14/(.1/250)- (2*3.14*100/10)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((2*3.14*100/10) + (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) * (2/(.1/250))*sin(.5* ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000)* (.1/250)*sin( acos(rand(-1,1))) * cos(rand(0,2*3.14)) )* x + (rand(-3.14/2,3.14/2))),  2 * sqrt(1.453 * exp(-2 * (((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) / 4000) ^ 2) * (.01^2 / 25.82) * (((2*3.14*100/9)+ (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((2*3.14*100/9) + (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) * (2/(.1/250))*sin(.5* ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000)* (.1/250)*sin( acos(rand(-1,1))) * sin(rand(0,2*3.14)) )* y + (rand(-3.14/2,3.14/2))), 49.6/5000+(2 * sqrt(1.453 * exp(-2 * (((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) / 4000) ^ 2) * (0.5^2 / 25.82) * (((2*3.14*100/9)+ (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((2*3.14*100/9) + (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) * (2/(.4/250))*sin(.5* ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000)* (.4/250/2)*cos( acos(rand(-1,1))) )* z + (rand(-3.14/2,3.14/2))))
           constants:
             n: 5000
             alpha: 1.453
@@ -200,9 +151,8 @@ timestepper:
             LO1: 0
             HI2: pi/2
             LO2: -pi/2
-        massFractions: !ablate::finiteVolume::fieldFunctions::MassFractions
-          &fuelMassFrac
-          eos: *eos
+        massFractions: !<!ablate::finiteVolume::fieldFunctions::MassFractions> &4
+          eos: *1
           values:
             - fieldName: CH4
               field: .1561
@@ -210,29 +160,27 @@ timestepper:
               field: 0.6473
             - fieldName: O2
               field: 0.1966
-    - !ablate::finiteVolume::fieldFunctions::DensityMassFractions
+    - !<!ablate::finiteVolume::fieldFunctions::DensityMassFractions>
       region:
         name: CH4Inlet
-      state: *CH4InletFlowState
-    - !ablate::finiteVolume::fieldFunctions::DensityExtraVariables
+      state: *3
+    - !<!ablate::finiteVolume::fieldFunctions::DensityExtraVariables>
       region:
         name: CH4Inlet
-      state: *CH4InletFlowState
+      state: *3
       functions:
         - 20
-
-    - !ablate::finiteVolume::fieldFunctions::Euler
+    - !<!ablate::finiteVolume::fieldFunctions::Euler>
       region:
         name: pilotInlet
-      state: &pilotInletFlowState
-        eos: *eos
+      state: &5
+        eos: *1
         pressure: 101325.0
-        temperature:  1880
-        velocity: !ablate::mathFunctions::ParsedSeries
+        temperature: 1880
+        velocity: !<!ablate::mathFunctions::ParsedSeries>
           upperBound: 5000
           lowerBound: 1
-          formula: 2 * sqrt(1.453 * exp(-2 * (((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) / 4819) ^ 2) * (.01^2 / 25.82) * (((100/9)+ (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((100/9) + (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) * (2/(.1/450))*sin(.5* ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000)* (.1/450)*sin( acos(rand(-1,1))) * cos(rand(0,2*3.14)) )* x + (rand(-3.14/2,3.14/2))),  2 * sqrt(1.453 * exp(-2 * (((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) / 4819) ^ 2) * (.01^2 / 25.82) * (((100/9)+ (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((100/9) + (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) * (2/(.1/450))*sin(.5* ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000)* (.1/450)*sin( acos(rand(-1,1))) * sin(rand(0,2*3.14)) )* y + (rand(-3.14/2,3.14/2))), 11.4/5000+(2 * sqrt(1.453 * exp(-2 * (((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) / 4819) ^ 2) * (.25^2 / 25.82) * (((100/9)+ (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((100/9) + (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) * (2/(.1/450))*sin(.5* ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000)* (.1/450)*cos( acos(rand(-1,1))) )* z + (rand(-3.14/2,3.14/2))))
-
+          formula: 2 * sqrt(1.453 * exp(-2 * (((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) / 4000) ^ 2) * (.01^2 / 25.82) * (((2*3.14*100/9)+ (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((2*3.14*100/9) + (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) * (2/(.1/250))*sin(.5* ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000)* (.1/250)*sin( acos(rand(-1,1))) * cos(rand(0,2*3.14)) )* x + (rand(-3.14/2,3.14/2))),  2 * sqrt(1.453 * exp(-2 * (((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) / 4000) ^ 2) * (.01^2 / 25.82) * (((2*3.14*100/9)+ (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((2*3.14*100/9) + (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) * (2/(.1/250))*sin(.5* ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000)* (.1/250)*sin( acos(rand(-1,1))) * sin(rand(0,2*3.14)) )* y + (rand(-3.14/2,3.14/2))), 11.6/5000+(2 * sqrt(1.453 * exp(-2 * (((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) / 4000) ^ 2) * (0.05^2 / 25.82) * (((2*3.14*100/9)+ (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((2*3.14*100/9) + (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) * (2/(.4/250))*sin(.5* ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000)* (.4/250/2)*cos( acos(rand(-1,1))) )* z + (rand(-3.14/2,3.14/2))))
           constants:
             n: 5000
             alpha: 1.453
@@ -248,10 +196,8 @@ timestepper:
             LO1: 0
             HI2: pi/2
             LO2: -pi/2
-
-        massFractions: !ablate::finiteVolume::fieldFunctions::MassFractions
-          &oxMassFrac
-          eos: *eos
+        massFractions: !<!ablate::finiteVolume::fieldFunctions::MassFractions> &6
+          eos: *1
           values:
             - fieldName: CO2
               field: .109
@@ -271,30 +217,27 @@ timestepper:
               field: .002
             - fieldName: O
               field: .0007
-    - !ablate::finiteVolume::fieldFunctions::DensityMassFractions
+    - !<!ablate::finiteVolume::fieldFunctions::DensityMassFractions>
       region:
         name: pilotInlet
-      state: *pilotInletFlowState
-    - !ablate::finiteVolume::fieldFunctions::DensityExtraVariables
+      state: *5
+    - !<!ablate::finiteVolume::fieldFunctions::DensityExtraVariables>
       region:
         name: pilotInlet
-      state: *pilotInletFlowState
+      state: *5
       functions:
         - 20
-
-
-    - !ablate::finiteVolume::fieldFunctions::Euler
+    - !<!ablate::finiteVolume::fieldFunctions::Euler>
       region:
-        name: AirInlet   
-      state: &AirtInletFlowState
-        eos: *eos
+        name: AirInlet
+      state: &7
+        eos: *1
         pressure: 101325.0
         temperature: 291
-        velocity: !ablate::mathFunctions::ParsedSeries
+        velocity: !<!ablate::mathFunctions::ParsedSeries>
           upperBound: 5000
           lowerBound: 1
-          formula: 2 * sqrt(1.453 * exp(-2 * (((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) / 4819) ^ 2) * (.01^2 / 25.82) * (((100/9)+ (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((100/9) + (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) * (2/(.1/450))*sin(.5* ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000)* (.1/450)*sin( acos(rand(-1,1))) * cos(rand(0,2*3.14)) )* x + (rand(-3.14/2,3.14/2))),  2 * sqrt(1.453 * exp(-2 * (((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) / 4819) ^ 2) * (.01^2 / 25.82) * (((100/9)+ (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((100/9) + (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) * (2/(.1/450))*sin(.5* ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000)* (.1/450)*sin( acos(rand(-1,1))) * sin(rand(0,2*3.14)) )* y + (rand(-3.14/2,3.14/2))), .9/5000+(2 * sqrt(1.453 * exp(-2 * (((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) / 4819) ^ 2) * (.1^2 / 25.82) * (((100/9)+ (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((100/9) + (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) * (2/(.1/450))*sin(.5* ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000)* (.1/450)*cos( acos(rand(-1,1))) )* z + (rand(-3.14/2,3.14/2))))
-
+          formula: 2 * sqrt(1.453 * exp(-2 * (((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) / 4000) ^ 2) * (.01^2 / 25.82) * (((2*3.14*100/9)+ (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((2*3.14*100/9) + (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) * (2/(.1/250))*sin(.5* ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000)* (.1/250)*sin( acos(rand(-1,1))) * cos(rand(0,2*3.14)) )* x + (rand(-3.14/2,3.14/2))),  2 * sqrt(1.453 * exp(-2 * (((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) / 4000) ^ 2) * (.01^2 / 25.82) * (((2*3.14*100/9)+ (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((2*3.14*100/9) + (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) * (2/(.1/250))*sin(.5* ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000)* (.1/250)*sin( acos(rand(-1,1))) * sin(rand(0,2*3.14)) )* y + (rand(-3.14/2,3.14/2))), 1.6/5000+(2 * sqrt(1.453 * exp(-2 * (((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) / 4000) ^ 2) * (0.01^2 / 25.82) * (((2*3.14*100/9)+ (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((2*3.14*100/9) + (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) * (2/(.4/250))*sin(.5* ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000)* (.4/250/2)*cos( acos(rand(-1,1))) )* z + (rand(-3.14/2,3.14/2))))
           constants:
             n: 5000
             alpha: 1.453
@@ -310,81 +253,60 @@ timestepper:
             LO1: 0
             HI2: pi/2
             LO2: -pi/2
-        massFractions: !ablate::finiteVolume::fieldFunctions::MassFractions
-          eos: *eos
+        massFractions: !<!ablate::finiteVolume::fieldFunctions::MassFractions>
+          eos: *1
           values:
             - fieldName: N2
               field: 0.77
             - fieldName: O2
               field: 0.23
-    - !ablate::finiteVolume::fieldFunctions::DensityMassFractions
+    - !<!ablate::finiteVolume::fieldFunctions::DensityMassFractions>
       region:
         name: AirInlet
-      state: *AirtInletFlowState
-    - !ablate::finiteVolume::fieldFunctions::DensityExtraVariables
+      state: *7
+    - !<!ablate::finiteVolume::fieldFunctions::DensityExtraVariables>
       region:
         name: AirInlet
-      state: *AirtInletFlowState
+      state: *7
       functions:
         - 20
 solvers:
-  # The compressible flow solver will solve the compressible flow equations over the interiorCells
-  - !ablate::finiteVolume::CompressibleFlowSolver
+  - !<!ablate::finiteVolume::CompressibleFlowSolver>
     id: vortexFlowField
-
-    # only apply this solver to the interior cells
     region:
-      name: flowRegion
-
-    # overwrite and set the time step based upon the CFL constrain
+      name: interiorCells
     computePhysicsTimeStep: true
-
     additionalProcesses:
-      - !ablate::finiteVolume::processes::LES
+      - !<!ablate::finiteVolume::processes::LES>
         tke: ev1
-      # in addition to the default process PressureGradientScaling can be used to speed up the simulation.
-      # the pgs must be supplied to other components to keep consistent calculations
-      - !ablate::finiteVolume::processes::PressureGradientScaling
-        &pgs
-        eos: *eos
+      - !<!ablate::finiteVolume::processes::PressureGradientScaling> &8
+        eos: *1
         alphaInit: 1.0
         maxAlphaAllowed: 100.0
         domainLength: 0.165354
-      #- !ablate::finiteVolume::processes::TChemReactions
-        #eos: *eos
-        # output the history of the pgs to standard out
-      - !ablate::finiteVolume::processes::Gravity
-        vector: [ 0, 0, -9.81 ]
-        # a flux calculator must be specified to so solver for advection
-    fluxCalculator: !ablate::finiteVolume::fluxCalculator::AusmpUp
+      - !<!ablate::finiteVolume::processes::TChemReactions>
+        eos: *1
+      - !<!ablate::finiteVolume::processes::Gravity>
+        vector: [0, 0, -9.81]
+    fluxCalculator: !<!ablate::finiteVolume::fluxCalculator::AusmpUp>
       mInf: .3
-      pgs: *pgs
-
-    # cfl is used to compute the physics time step
+      pgs: *8
     parameters:
       cfl: 0.5
-
-    # the default transport object assumes constant values for k, mu, diff
     transport:
       mu: 0
-
-    # share the existing eos with the compressible flow solver
-    eos: *eos
-
-
+    eos: *1
     monitors:
-      # output the time and dt at each time step
-      - !ablate::monitors::TimeStepMonitor
+      - !<!ablate::monitors::TimeStepMonitor>
         interval: 25
-      - !ablate::monitors::PhysicsTimeStep
+      - !<!ablate::monitors::PhysicsTimeStep>
         interval: 25
-      - !ablate::monitors::MixtureFractionMonitor
-        mixtureFractionCalculator: !ablate::chemistry::MixtureFractionCalculator
-         eos: *eos
-         massFractionsFuel: *fuelMassFrac
-         massFractionsOxidizer: *oxMassFrac
-
-  - !ablate::boundarySolver::BoundarySolver
+      - !<!ablate::monitors::MixtureFractionMonitor>
+        mixtureFractionCalculator: !<!ablate::chemistry::MixtureFractionCalculator>
+          eos: *1
+          massFractionsFuel: *4
+          massFractionsOxidizer: *6
+  - !<!ablate::boundarySolver::BoundarySolver>
     id: CH4Inlet
     region:
       name: CH4Inlet
@@ -392,14 +314,13 @@ solvers:
       name: boundaryFaces
     mergeFaces: true
     processes:
-      - !ablate::boundarySolver::lodi::Inlet
-        eos: *eos
-        pgs: *pgs
-        velocity: !ablate::mathFunctions::ParsedSeries
+      - !<!ablate::boundarySolver::lodi::Inlet>
+        eos: *1
+        pgs: *8
+        velocity: !<!ablate::mathFunctions::ParsedSeries>
           upperBound: 5000
           lowerBound: 1
-          formula: 2 * sqrt(1.453 * exp(-2 * (((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) / 4819) ^ 2) * (.01^2 / 25.82) * (((100/9)+ (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((100/9) + (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) * (2/(.1/450))*sin(.5* ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000)* (.1/450)*sin( acos(rand(-1,1))) * cos(rand(0,2*3.14)) )* x + (rand(-3.14/2,3.14/2))),  2 * sqrt(1.453 * exp(-2 * (((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) / 4819) ^ 2) * (.01^2 / 25.82) * (((100/9)+ (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((100/9) + (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) * (2/(.1/450))*sin(.5* ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000)* (.1/450)*sin( acos(rand(-1,1))) * sin(rand(0,2*3.14)) )* y + (rand(-3.14/2,3.14/2))), 49.6/5000+(2 * sqrt(1.453 * exp(-2 * (((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) / 4819) ^ 2) * (1^2 / 25.82) * (((100/9)+ (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((100/9) + (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) * (2/(.1/450))*sin(.5* ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000)* (.1/450)*cos( acos(rand(-1,1))) )* z + (rand(-3.14/2,3.14/2))))
-
+          formula: 2 * sqrt(1.453 * exp(-2 * (((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) / 4000) ^ 2) * (.01^2 / 25.82) * (((2*3.14*100/9)+ (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((2*3.14*100/9) + (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) * (2/(.1/250))*sin(.5* ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000)* (.1/250)*sin( acos(rand(-1,1))) * cos(rand(0,2*3.14)) )* x + (rand(-3.14/2,3.14/2))),  2 * sqrt(1.453 * exp(-2 * (((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) / 4000) ^ 2) * (.01^2 / 25.82) * (((2*3.14*100/9)+ (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((2*3.14*100/9) + (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) * (2/(.1/250))*sin(.5* ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000)* (.1/250)*sin( acos(rand(-1,1))) * sin(rand(0,2*3.14)) )* y + (rand(-3.14/2,3.14/2))), 49.6/5000+(2 * sqrt(1.453 * exp(-2 * (((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) / 4000) ^ 2) * (0.5^2 / 25.82) * (((2*3.14*100/9)+ (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((2*3.14*100/9) + (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) * (2/(.4/250))*sin(.5* ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000)* (.4/250/2)*cos( acos(rand(-1,1))) )* z + (rand(-3.14/2,3.14/2))))
           constants:
             n: 5000
             alpha: 1.453
@@ -415,23 +336,21 @@ solvers:
             LO1: 0
             HI2: pi/2
             LO2: -pi/2
-
-  - !ablate::boundarySolver::BoundarySolver
-    id:   pilotInlet
+  - !<!ablate::boundarySolver::BoundarySolver>
+    id: pilotInlet
     region:
       name: pilotInlet
     fieldBoundary:
       name: boundaryFaces
     mergeFaces: true
     processes:
-      - !ablate::boundarySolver::lodi::Inlet
-        eos: *eos
-        pgs: *pgs
-        velocity: !ablate::mathFunctions::ParsedSeries
+      - !<!ablate::boundarySolver::lodi::Inlet>
+        eos: *1
+        pgs: *8
+        velocity: !<!ablate::mathFunctions::ParsedSeries>
           upperBound: 5000
           lowerBound: 1
-          formula: 2 * sqrt(1.453 * exp(-2 * (((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) / 4819) ^ 2) * (.01^2 / 25.82) * (((100/9)+ (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((100/9) + (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) * (2/(.1/450))*sin(.5* ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000)* (.1/450)*sin( acos(rand(-1,1))) * cos(rand(0,2*3.14)) )* x + (rand(-3.14/2,3.14/2))),  2 * sqrt(1.453 * exp(-2 * (((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) / 4819) ^ 2) * (.01^2 / 25.82) * (((100/9)+ (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((100/9) + (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) * (2/(.1/450))*sin(.5* ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000)* (.1/450)*sin( acos(rand(-1,1))) * sin(rand(0,2*3.14)) )* y + (rand(-3.14/2,3.14/2))), 11.4/5000+(2 * sqrt(1.453 * exp(-2 * (((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) / 4819) ^ 2) * (.25^2 / 25.82) * (((100/9)+ (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((100/9) + (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) * (2/(.1/450))*sin(.5* ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000)* (.1/450)*cos( acos(rand(-1,1))) )* z + (rand(-3.14/2,3.14/2))))
-
+          formula: 2 * sqrt(1.453 * exp(-2 * (((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) / 4000) ^ 2) * (.01^2 / 25.82) * (((2*3.14*100/9)+ (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((2*3.14*100/9) + (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) * (2/(.1/250))*sin(.5* ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000)* (.1/250)*sin( acos(rand(-1,1))) * cos(rand(0,2*3.14)) )* x + (rand(-3.14/2,3.14/2))),  2 * sqrt(1.453 * exp(-2 * (((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) / 4000) ^ 2) * (.01^2 / 25.82) * (((2*3.14*100/9)+ (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((2*3.14*100/9) + (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) * (2/(.1/250))*sin(.5* ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000)* (.1/250)*sin( acos(rand(-1,1))) * sin(rand(0,2*3.14)) )* y + (rand(-3.14/2,3.14/2))), 11.6/5000+(2 * sqrt(1.453 * exp(-2 * (((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) / 4000) ^ 2) * (0.05^2 / 25.82) * (((2*3.14*100/9)+ (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((2*3.14*100/9) + (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) * (2/(.4/250))*sin(.5* ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000)* (.4/250/2)*cos( acos(rand(-1,1))) )* z + (rand(-3.14/2,3.14/2))))
           constants:
             n: 5000
             alpha: 1.453
@@ -447,23 +366,21 @@ solvers:
             LO1: 0
             HI2: pi/2
             LO2: -pi/2
-
-  - !ablate::boundarySolver::BoundarySolver
-    id:   AirInlet
+  - !<!ablate::boundarySolver::BoundarySolver>
+    id: AirInlet
     region:
       name: AirInlet
     fieldBoundary:
       name: boundaryFaces
     mergeFaces: true
     processes:
-      - !ablate::boundarySolver::lodi::Inlet
-        eos: *eos
-        pgs: *pgs
-        velocity: !ablate::mathFunctions::ParsedSeries
+      - !<!ablate::boundarySolver::lodi::Inlet>
+        eos: *1
+        pgs: *8
+        velocity: !<!ablate::mathFunctions::ParsedSeries>
           upperBound: 5000
           lowerBound: 1
-          formula: 2 * sqrt(1.453 * exp(-2 * (((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) / 4819) ^ 2) * (.01^2 / 25.82) * (((100/9)+ (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((100/9) + (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) * (2/(.1/450))*sin(.5* ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000)* (.1/450)*sin( acos(rand(-1,1))) * cos(rand(0,2*3.14)) )* x + (rand(-3.14/2,3.14/2))),  2 * sqrt(1.453 * exp(-2 * (((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) / 4819) ^ 2) * (.01^2 / 25.82) * (((100/9)+ (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((100/9) + (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) * (2/(.1/450))*sin(.5* ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000)* (.1/450)*sin( acos(rand(-1,1))) * sin(rand(0,2*3.14)) )* y + (rand(-3.14/2,3.14/2))), .9/5000+(2 * sqrt(1.453 * exp(-2 * (((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) / 4819) ^ 2) * (.1^2 / 25.82) * (((100/9)+ (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((100/9) + (3.14/(.1/450)- (100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000) * (2/(.1/450))*sin(.5* ((100/9) + (3.14/(.1/450) - (100/9)) * (i - 1)  / 5000)* (.1/450)*cos( acos(rand(-1,1))) )* z + (rand(-3.14/2,3.14/2))))
-
+          formula: 2 * sqrt(1.453 * exp(-2 * (((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) / 4000) ^ 2) * (.01^2 / 25.82) * (((2*3.14*100/9)+ (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((2*3.14*100/9) + (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) * (2/(.1/250))*sin(.5* ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000)* (.1/250)*sin( acos(rand(-1,1))) * cos(rand(0,2*3.14)) )* x + (rand(-3.14/2,3.14/2))),  2 * sqrt(1.453 * exp(-2 * (((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) / 4000) ^ 2) * (.01^2 / 25.82) * (((2*3.14*100/9)+ (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((2*3.14*100/9) + (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) * (2/(.1/250))*sin(.5* ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000)* (.1/250)*sin( acos(rand(-1,1))) * sin(rand(0,2*3.14)) )* y + (rand(-3.14/2,3.14/2))), 1.6/5000+(2 * sqrt(1.453 * exp(-2 * (((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) / 4000) ^ 2) * (0.01^2 / 25.82) * (((2*3.14*100/9)+ (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000)/ 25.82) ^ 4 / (1* (1 + (((2*3.14*100/9) + (3.14/(.1/250)- (2*3.14*100/9)) * (i - 1)  / 5000) / 25.82) )^ (17/6)))* cos( ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000) * (2/(.4/250))*sin(.5* ((2*3.14*100/9) + (3.14/(.1/250) - (2*3.14*100/9)) * (i - 1)  / 5000)* (.4/250/2)*cos( acos(rand(-1,1))) )* z + (rand(-3.14/2,3.14/2))))
           constants:
             n: 5000
             alpha: 1.453
@@ -479,8 +396,7 @@ solvers:
             LO1: 0
             HI2: pi/2
             LO2: -pi/2
-  - !ablate::boundarySolver::BoundarySolver
-
+  - !<!ablate::boundarySolver::BoundarySolver>
     id: outlet
     region:
       name: boundaryCellsFront
@@ -488,13 +404,13 @@ solvers:
       name: boundaryFaces
     mergeFaces: true
     processes:
-      - !ablate::boundarySolver::lodi::OpenBoundary
-        eos: *eos
+      - !<!ablate::boundarySolver::lodi::OpenBoundary>
+        eos: *1
         reflectFactor: 0.0
         referencePressure: 101325.0
         maxAcousticsLength: 1
-        pgs: *pgs
-  - !ablate::boundarySolver::BoundarySolver
+        pgs: *8
+  - !<!ablate::boundarySolver::BoundarySolver>
     id: wallBoundaryCells
     region:
       name: wallBoundaryCells
@@ -502,7 +418,6 @@ solvers:
       name: boundaryFaces
     mergeFaces: true
     processes:
-      - !ablate::boundarySolver::lodi::IsothermalWall
-        eos: *eos
-        pgs: *pgs
-
+      - !<!ablate::boundarySolver::lodi::IsothermalWall>
+        eos: *1
+        pgs: *8
