@@ -10,12 +10,12 @@ timestepper:
   name: theMainTimeStepper
   io: !ablate::io::Hdf5MultiFileSerializer
 
-    interval: 20000
+    interval: 10000
   # time stepper specific input arguments.  By default, the time stepper will use TSADAPTBASIC
   arguments:
     ts_type: rk
     ts_adapt_type: none
-    ts_max_steps: 1200000
+    ts_max_steps: 120000
   # sets a single box domain with periodic boundary conditions
   domain: !ablate::domain::BoxMesh
     name: simpleBoxField
@@ -86,7 +86,7 @@ solver: !ablate::finiteVolume::CompressibleFlowSolver
   id: evExample
 
   parameters:
-    cfl: .005
+    cfl: .001
   # a flux calculator must be specified to so solver for advection
   fluxCalculator: !ablate::finiteVolume::fluxCalculator::AusmpUp
     mInf: .5
